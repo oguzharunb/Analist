@@ -1,0 +1,384 @@
+{% extends "base.html" %}{% block content %}
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row g-4 justify-content-center">
+        <div class="col-lg-12">
+            <div class="bg-secondary text-center rounded p-4">
+
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h6 class="mb-0">Filtrele</h6>
+                </div>
+                <div class="btn-group" role="group">
+                    {% for res in classnames %}
+                    <input type="checkbox" class="btn-check" name="classname" id="{{res}}" autocomplete="off"
+                        checked="true">
+                    <label class="btn btn-outline-primary" for="{{res}}">{{res}}</label>
+                    {% endfor %}
+                    <button id="selectAllClassnames" class="btn btn-secondary">Tümünü Seç</button>
+                </div>
+
+                <br>
+                <div class="btn-group mt-2" role="group">
+                    {% for res in examnames %}
+                    <input type="checkbox" class="btn-check" name="examname" id="{{res}}" autocomplete="off"
+                        checked="true">
+                    <label class="btn btn-outline-primary" for="{{res}}">{{res}}</label>
+                    {% endfor %}
+                    <button id="selectAllExamnames" class="btn btn-secondary">Tümünü Seç</button>
+                </div>
+                <br>
+                <div class="btn-group mt-2" role="group">
+                    {% for res in examtypes %}
+                    <input type="checkbox" class="btn-check" name="examtype" id="{{res}}" autocomplete="off"
+                        checked="true">
+                    <label class="btn btn-outline-primary" for="{{res}}">{{res}}</label>
+                    {% endfor %}
+                    <button id="selectAllExamtypes" class="btn btn-secondary">Tümünü Seç</button>
+                </div>
+                <br>
+                <button onclick="filterData()" type="button" class="btn btn-primary m-2 mt-4">Filtrele</button>
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h6 class="mb-0">Net Tablosu</h6>
+                </div>
+                <p id="noDataMessage" style="text-align: center; display: none;">Görüntülenecek Veri Yok</p>
+
+                <canvas id="worldwide-sales" style="display: block; width: 100%;"></canvas>
+                <br>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="chart-container" class="container-fluid pt-4 px-4" style="display:none;">
+    <div class="row g-4">
+        <div class="col-sm-12 col-xl-6">
+            <div class="bg-secondary rounded h-100 p-4">
+                <h6 class="mb-4">Doğru Yanlış Oranı</h6>
+                <canvas id="dogru-yanlis"></canvas>
+            </div>
+        </div>
+        <div class="col-sm-12 col-xl-6">
+            <div class="bg-secondary rounded h-100 p-4">
+                <h6 class="mb-4">Net Tablo</h6>
+                <canvas id="net-tablo"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+<div class="container-fluid pt-4 px-4">
+    <div class="row g-4">
+        <div class="col-sm-12 col-xl-12 bg-secondary">
+            <input class="form-control bg-dark border-0 mt-4" type="text" id="searchInput"
+                placeholder="Kullanıcı adına göre ara">
+
+            <table id="myTable" class="table table-responsive ">
+                <thead>
+                    <tr>
+                        <td>username</td>
+                        <td>class</td>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+
+
+
+<script>
+    const results = JSON.parse('{{ exam_results | tojson | safe }}');
+    let filteredResults = results;
+
+    document.getElementById('selectAllExamnames').addEventListener('click', function () {
+        toggleAllCheckboxes('examname');
+    });
+    document.getElementById('selectAllExamtypes').addEventListener('click', function () {
+        toggleAllCheckboxes('examtype');
+    });
+    document.getElementById('selectAllClassnames').addEventListener('click', function () {
+        toggleAllCheckboxes('classname');
+    });
+
+    function visulizeOneUserCharts(datas) {
+
+        const examnames = datas.map((item) => item.examname);
+        const qtrues = datas.map((item) => item.qtrue);
+        const qfalses = datas.map((item) => item.qfalse);
+        const scores = datas.map((item) => item.score);
+        console.log(examnames);
+        console.log(qtrues);
+        console.log(qfalses);
+        console.log(scores);
+        if (window.userChart) {
+            window.userChart.destroy();
+        }
+
+        var ctx2 = $("#dogru-yanlis").get(0).getContext("2d");
+        window.userChart = new Chart(ctx2, {
+            type: "bar",
+            data: {
+                labels: examnames,
+                datasets: [{
+                    label: "Doğru Sayısı",
+                    data: qtrues,
+                    backgroundColor: "rgba(22, 100, 22, .7)"
+                },
+                {
+                    label: "Yanlış Sayısı",
+                    data: qfalses,
+                    backgroundColor: "rgba(100, 22, 22, .5)"
+                },
+
+                ]
+            },
+            options: {
+                responsive: true
+            }
+        }
+
+        );
+
+        if (window.myChart3) {
+            window.myChart3.destroy();
+        }
+        var ctx3 = $("#net-tablo").get(0).getContext("2d");
+        window.myChart3 = new Chart(ctx3, {
+            type: "line",
+            data: {
+                labels: examnames,
+                datasets: [{
+                    label: "Net Sayısı",
+                    data: scores,
+                    backgroundColor: "rgba(22, 22, 100, .7)",
+                    fill: true
+                },
+
+                ]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+    }
+
+    function toggleAllCheckboxes(nameAttribute) {
+        let checkboxes = document.querySelectorAll(`input[name="${nameAttribute}"]`);
+        let allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked; // checkbox toggle 
+        });
+    }
+
+    function filterData() {
+        let checkboxesClassnames = document.querySelectorAll('input[name="classname"]:checked');
+        let checkboxesExamnames = document.querySelectorAll('input[name="examname"]:checked');
+        let checkboxesExamtypes = document.querySelectorAll('input[name="examtype"]:checked');
+
+        let checkedClassnames = Array.from(checkboxesClassnames).map(checkbox => checkbox.id);
+        let checkedExamnames = Array.from(checkboxesExamnames).map(checkbox => checkbox.id);
+        let checkedExamtypes = Array.from(checkboxesExamtypes).map(checkbox => checkbox.id);
+
+        filteredResults = results.filter(result =>
+            checkedClassnames.includes(result.classname) && checkedExamnames.includes(result.examname) && checkedExamtypes.includes(result.examtype)
+        );
+        console.log(filteredResults.filter(x => x.username == "ahmetbayram338"));
+        // filtreden sonra yeniden oluştur
+        renderChart();
+    }
+    window.addEventListener("load", function () {
+        visTable();
+        filterData();
+    });
+
+    function renderChart() {
+        const uniqueExamnames = [...new Set(filteredResults.map(result => result.examname))];
+        const uniqueClassnames = [...new Set(filteredResults.map(result => result.classname))];
+
+        if (filteredResults.length === 0) {
+            document.getElementById("noDataMessage").style.display = "block";
+            if (window.myChart1) {
+                window.myChart1.destroy();
+            }
+            return; // exit out of the function early
+        } else {
+            document.getElementById("noDataMessage").style.display = "none";
+        }
+
+        function getDataForClassname(classname) {
+            const dataForClass = filteredResults.filter(result => result.classname === classname);
+
+            const data = uniqueExamnames.map(examname => {
+                const examsOfClass = dataForClass.filter(item => item.examname === examname);
+                const sum = examsOfClass.reduce((acc, item) => acc + item.qabs, 0);
+                return examsOfClass.length ? sum / examsOfClass.length : 0;
+            });
+
+            if (uniqueExamnames.length >= 2) {
+                const totalSum = dataForClass.reduce((acc, item) => acc + item.qabs, 0);
+                const average = dataForClass.length ? totalSum / dataForClass.length : 0;
+                //const sum = average.reduce((acc, curr) => acc + curr, 0);
+                //average.push(sum / average.length);
+                data.push(average);  // ortalama ekle
+            }
+
+            return data;
+        }
+
+
+
+        function getAverageForAllClasses(examname) {
+            const exams = filteredResults.filter(item => item.examname === examname);
+            const sum = exams.reduce((acc, item) => acc + item.qabs, 0);
+            return exams.length ? sum / exams.length : 0;
+        }
+
+        const datasets = uniqueClassnames.map(classname => ({
+            label: classname,
+            data: getDataForClassname(classname),
+            backgroundColor: getRandomColor()  // her sınıf için rastgele renk oluştur
+        }));
+        // 2den fazla sınıf varsa, her sınav için sınıf ortalaması oluştur
+
+        if (uniqueExamnames.length >= 2) {
+            uniqueExamnames.push('Ortalama');
+        }
+
+        function getAverageForAllClasses(examname) {
+            if (examname === 'Ortalama') {
+                const sum = filteredResults.reduce((acc, item) => acc + item.qabs, 0);
+                return filteredResults.length ? sum / filteredResults.length : 0;
+            }
+
+            const exams = filteredResults.filter(item => item.examname === examname);
+            const sum = exams.reduce((acc, item) => acc + item.qabs, 0);
+            return exams.length ? sum / exams.length : 0;
+        }
+
+        if (uniqueClassnames.length >= 2) {
+            const averagesData = uniqueExamnames.map(examname => getAverageForAllClasses(examname));
+            datasets.push({
+                label: 'Okul Ortalaması',
+                data: averagesData,
+                backgroundColor: 'white'
+            });
+        }
+
+
+        // 2den fazla sınav varsa, her sınıf için sınav ortalaması oluştur
+
+
+
+        var ctx1 = $("#worldwide-sales").get(0).getContext("2d");
+
+        // eski tabloyu sil
+        if (window.myChart1) {
+            window.myChart1.destroy();
+        }
+
+        window.myChart1 = new Chart(ctx1, {
+            type: "bar",
+            data: {
+                labels: uniqueExamnames,
+                datasets: datasets
+            },
+            options: {
+                responsive: true
+            }
+        });
+    }
+
+
+    function getRandomColor() {
+        const r = Math.floor(Math.random() * 256);
+        const g = Math.floor(Math.random() * 256);
+        const b = Math.floor(Math.random() * 256);
+        return `rgba(${r}, ${g}, ${b}, 0.7)`;
+    }
+    let chartContainerShown = false;
+    function visTable() {
+
+        document.getElementById("chart-container").style.display = "visible";
+        const table = document.getElementById("myTable");
+        const tableBody = document.getElementById("tableBody");
+        const uniqueEntries = new Set(); // To keep track of unique entries
+
+        function searchByUsername(username) {
+            return results.filter(user => user.username === username);
+        }
+
+        results.forEach((data) => {
+            const combinedKey = `${data.username}-${data.classname}`;
+
+            if (!uniqueEntries.has(combinedKey)) {
+                const row = tableBody.insertRow();
+                const nameCell = row.insertCell(0);
+                const classCell = row.insertCell(1);
+
+                // Create a clickable username element
+                const usernameLink = document.createElement("a");
+                usernameLink.href = "#"; // You can set this to a valid link if needed
+                usernameLink.textContent = data.username;
+
+                // Add a click event listener to the username link
+                usernameLink.addEventListener("click", (event) => {
+                    event.preventDefault(); // Prevent the link from navigating (if used as a link)
+                    if (!chartContainerShown) {
+                        // Show the previously hidden div by changing the display property
+                        console.log('girdi');
+                        const chartContainer = document.getElementById("chart-container");
+                        chartContainer.style.display = "block"; // or chartContainer.style.display = "visible";
+
+                        // Update the flag to indicate that it has been shown
+                        chartContainerShown = true;
+                    }
+                    // Your action when a username is clicked
+                    userdata = searchByUsername(data.username);
+
+                    visulizeOneUserCharts(userdata);
+                    console.log(userdata);
+                });
+
+                // Append the username link to the nameCell
+                nameCell.appendChild(usernameLink);
+
+                classCell.innerHTML = data.classname;
+
+                // Add the combined key to the set to mark it as used
+                uniqueEntries.add(combinedKey);
+            }
+        });
+
+        const searchInput = document.getElementById("searchInput");
+
+        searchInput.addEventListener("input", () => {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+
+            for (let i = tableBody.rows.length - 1; i >= 0; i--) {
+                const username = tableBody.rows[i].cells[0].textContent.toLowerCase();
+
+                if (username.includes(searchTerm)) {
+                    tableBody.rows[i].style.display = ""; // Show the row
+                } else {
+                    tableBody.rows[i].style.display = "none"; // Hide the row
+                }
+            }
+        });
+        console.log(filteredResults.filter(x => x.username == "ahmetbayram338"));
+
+    }
+    // tabloyu çalıştır
+    renderChart();
+
+</script>
+
+{% endblock %}

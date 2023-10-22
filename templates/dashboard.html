@@ -1,0 +1,196 @@
+{% extends "base.html" %} {% block content %}
+
+
+
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row g-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-secondary rounded d-flex align-items-center justify-content-between p-4">
+                <i class="fa fa-chart-line fa-3x text-primary"></i>
+                <div class="ms-3">
+                    <p class="mb-2">Önceki 5 Denemeye Göre Değişim</p>
+                    <h6 class="mb-0"><span id="ratioValue"></span>%</h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-secondary rounded d-flex align-items-center justify-content-between p-4">
+                <i class="fa fa-chart-bar fa-3x text-primary"></i>
+                <div class="ms-3">
+                    <p class="mb-2">Son 5 Net Ortalaması</p>
+                    <h6 class="mb-0"><span id="averagelast5"></span></h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-secondary rounded d-flex align-items-center justify-content-between p-4">
+                <i class="fa fa-chart-area fa-3x text-primary"></i>
+                <div class="ms-3">
+                    <p class="mb-2">Son 5 Doğru Ortalaması</p>
+                    <h6 class="mb-0"><span id="averagetrue"></span></h6>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="bg-secondary rounded d-flex align-items-center justify-content-between p-4">
+                <i class="fa fa-chart-pie fa-3x text-primary"></i>
+                <div class="ms-3">
+                    <p class="mb-2">Son 5 Yanlış Ortalaması</p>
+                    <h6 class="mb-0"><span id="averagefalse"></span></h6>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="col-sm-12 col-xl-6">
+            <div class="bg-secondary rounded h-100 p-4">
+                <h6 class="mb-4">Doğru Yanlış Oranı</h6>
+                <canvas id="worldwide-sales"></canvas>
+            </div>
+        </div>
+        <div class="col-sm-12 col-xl-6">
+            <div class="bg-secondary rounded h-100 p-4">
+                <h6 class="mb-4">Net Çizelgesi</h6>
+                <canvas id="salse-revenue"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid pt-4 px-4">
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="bg-secondary rounded h-100 p-4">
+                <h6 class="mb-4">Deneme Sonuç Tablo</h6>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Deneme</th>
+                                <th scope="col">Doğru</th>
+                                <th scope="col">Yanlış</th>
+                                <th scope="col">Net</th>
+                                <th scope="col">%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for res in exam_result|reverse %}
+                            <tr>
+                                <td>{{ examname[loop.index0] }}</td>
+                                <td>{{res.qtrue}}</td>
+                                <td>{{res.qfalse}}</td>
+                                <td>{{res.qabs}}</td>
+                                <td>{{res.score}}</td>
+                            </tr>
+                            {% endfor %}
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+        <script>
+
+
+            const scores = JSON.parse('{{ scores      | tojson | safe }}');
+            const qtrues = JSON.parse('{{ qtrues      | tojson | safe }}');
+            const qfalses = JSON.parse('{{ qfalses     | tojson | safe }}');
+            const examname = JSON.parse('{{ examname    | tojson | safe }}');
+
+            let lastValues = scores.slice(-5); // Get the last 5 values
+            let otherValues = scores.slice(0, -5); // Get all the values except the last 5
+
+            if (scores.length < 5) {
+                lastValues = [scores[scores.length - 1]];
+                otherValues = scores.slice(0, -1);
+            }
+
+            const averageOfLastValues = lastValues.reduce((acc, val) => acc + val, 0) / lastValues.length;
+            const averageOfOthers = otherValues.length > 0 ? otherValues.reduce((acc, val) => acc + val, 0) / otherValues.length : 0;
+
+            const ratio = averageOfLastValues / averageOfOthers;
+
+            const rasyo = (ratio - 1) * 100;
+            document.getElementById("ratioValue").textContent = rasyo.toFixed(1);
+
+            function calculateAverage(numbers) {
+                // If there are fewer than 5 values, just calculate the average of all values.
+                if (numbers.length < 5) {
+                    const sum = numbers.reduce((acc, val) => acc + val, 0);
+                    return numbers.length === 0 ? 0 : sum / numbers.length;
+                }
+
+                // Slice the last 5 values and calculate their average.
+                const lastFive = numbers.slice(-5);
+                const sum = lastFive.reduce((acc, val) => acc + val, 0);
+                return sum / 5;
+            }
+
+            const averageScore = calculateAverage(scores);
+            document.getElementById('averagelast5').textContent = averageScore.toFixed(2);
+            const averageTrue = calculateAverage(qtrues);
+            document.getElementById('averagetrue').textContent = averageTrue.toFixed(2);
+            const averageFalse = calculateAverage(qfalses);
+            document.getElementById('averagefalse').textContent = averageFalse.toFixed(2);
+
+            // Chart Global Color
+            Chart.defaults.color = "#6C7293";
+            Chart.defaults.borderColor = "#000000";
+
+            var ctx1 = $("#worldwide-sales").get(0).getContext("2d");
+            var myChart1 = new Chart(ctx1, {
+                type: "bar",
+                data: {
+                    labels: examname,
+                    datasets: [{
+                        label: "Doğru Sayısı",
+                        data: qtrues,
+                        backgroundColor: "rgba(22, 100, 22, .7)"
+                    },
+                    {
+                        label: "Yanlış Sayısı",
+                        data: qfalses,
+                        backgroundColor: "rgba(100, 22, 22, .5)"
+                    },
+
+                    ]
+                },
+                options: {
+                    responsive: true
+                }
+            }
+
+            );
+
+
+            // Salse & Revenue Chart
+            var ctx2 = $("#salse-revenue").get(0).getContext("2d");
+            var myChart2 = new Chart(ctx2, {
+                type: "line",
+                data: {
+                    labels: examname,
+                    datasets: [{
+                        label: "Net Sayısı",
+                        data: scores,
+                        backgroundColor: "rgba(22, 22, 100, .7)",
+                        fill: true
+                    },
+
+                    ]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+
+
+
+
+        </script>
+
+
+        {% endblock %}

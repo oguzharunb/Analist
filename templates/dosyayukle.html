@@ -1,0 +1,31 @@
+{% if name %}
+<p>File {{ name }} has been uploaded successfully!</p>
+{% endif %}
+
+<!-- File upload form -->
+{% if filename %}
+<p>eklendi: {{ filename }}</p>
+<!-- Add your visualization code here -->
+{% else %}
+{% endif %}
+<form action="/dosyayukle" method="post" enctype="multipart/form-data">
+    <label for="file">Choose a file:</label>
+    <input type="file" name="file" id="file" required>
+    <br>
+    <input type="date" name="date" id="date" required>
+    <div class="col-sm-12 col-xl-6">
+        <div class="bg-secondary rounded h-100 p-4">
+            <h6 class="mb-4">Sınav Tipi</h6>
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="examtype" value="TYT" id="btnradio1" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="btnradio1">TYT</label>
+                
+                <input type="radio" class="btn-check" name="examtype" value="AYT" id="btnradio2" autocomplete="off">
+                <label class="btn btn-outline-primary" for="btnradio2">AYT</label>
+                
+
+            </div>
+        </div>
+    </div>
+    <input type="submit" value="Upload">
+</form>

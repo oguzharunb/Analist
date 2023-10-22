@@ -1,0 +1,12 @@
+FROM python:3.11.4
+RUN pip install --upgrade pip
+EXPOSE 5000
+COPY [^init]* /app/
+RUN mkdir /app/templates
+RUN mkdir /app/static
+COPY templates /app/templates
+COPY static /app/static
+WORKDIR /app
+RUN ls
+RUN pip install -r requirements.txt
+CMD [ "python", "app.py" ]

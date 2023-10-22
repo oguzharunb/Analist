@@ -1,0 +1,26 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.flask
+    links:
+      - db
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    command: --default-authentication-plugin=caching_sha2_password
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: analistv1
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d

@@ -1,0 +1,6 @@
+sqlalchemy
+flask        
+flask_login  
+PyPDF2
+Werkzeug==2.3.0
+mysql
