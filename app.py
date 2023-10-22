@@ -149,7 +149,7 @@ def hello_world():
 def add_new_data(filename:str,date:str,exam_type:str): 
 # creating a pdf file object
     pdfFileObj = open(filename, 'rb')
-    filename = filename.split('/')[-1]
+    filename = filename.split('/')[-1].split('.pdf')[0]
     
     # creating a pdf reader object
     pdfReader = PyPDF2.PdfReader(pdfFileObj)
@@ -181,7 +181,7 @@ def add_new_data(filename:str,date:str,exam_type:str):
                 name.append(x)
             elif x.isnumeric():
                 school_no = x
-            elif isalandnum(x):
+            elif x in ['9A','9B','9C','9D','10B','10C','10D','10A','11A','11B','11C','11D','11E','12A','12B','12C','12D','12E']:
                 userclass = x
         userclass = x if x else 'Yok'
         username = f'{convert_to_username(name)}{school_no}'
