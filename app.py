@@ -174,16 +174,15 @@ def add_new_data(filename:str,date:str,exam_type:str):
         #getting datas
         name  = []
         school_no = 0
-        userclass = ''
+        userclass = 'Yok'
         for x in userinfo.split(' '):
             x.replace(' ','')
-            if x.isalpha():
+            if x in ['9A','9B','9C','9D','10B','10C','10D','10A','11A','11B','11C','11D','11E','12A','12B','12C','12D','12E']:
+                userclass = x
+            elif x.isalpha():
                 name.append(x)
             elif x.isnumeric():
                 school_no = x
-            elif x in ['9A','9B','9C','9D','10B','10C','10D','10A','11A','11B','11C','11D','11E','12A','12B','12C','12D','12E']:
-                userclass = x
-        userclass = x if x else 'Yok'
         username = f'{convert_to_username(name)}{school_no}'
         password = caesar_hashing(username[:4])
         qtrue, qfalse, qabs, score = userexamresult.replace(',','.').split(' ')[2:6]
@@ -216,4 +215,4 @@ def add_new_data(filename:str,date:str,exam_type:str):
     # closing the pdf file object
     pdfFileObj.close()
 
-app.run(debug= True, host='0.0.0.0', port=5000)
+app.run(debug= False, host='0.0.0.0', port=5000)
